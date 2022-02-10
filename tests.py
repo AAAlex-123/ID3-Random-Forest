@@ -1,6 +1,6 @@
 import os
 
-from timed import timed
+from timed import Timer
 from load_imdb import load_examples, load_attributes
 from id3 import entropy
 
@@ -43,6 +43,7 @@ def test_entropy(*probabilities: float) -> list[float]:
     assert entropy(1/2) == 1
 
     return entropies
+
 
 def find_best_cutoff():
     max_accuracy = -1
@@ -98,6 +99,41 @@ def find_best_tree_count():
         print("Trying", i, "trees, accuracy=", results.accuracy())
 
     return max_cutoff, max_accuracy
+
+
+def test_timer():
+    import time
+
+    @Timer(priority=Timer.Priority.LOW)
+    def add1(a: int, b: int, n: float) -> int:
+        time.sleep(n)
+        return a * b
+
+    @Timer(priority=Timer.Priority.MEDIUM, prompt="my prompt")
+    def add2(a: int, b: int, n: float) -> int:
+        time.sleep(n)
+        return a * b
+
+    @Timer(priority=Timer.Priority.HIGH, prompt=None)
+    def add3(a: int, b: int, n: float) -> int:
+        time.sleep(n)
+        return a * b
+
+    Timer.set_predicate(Timer.Predicate.above(6))
+    print("set to above 6")
+    add1(1, 2, 0.5)
+    add2(2, 3, 0.5)
+    add3(3, 4, 0.5)
+    Timer.set_predicate(Timer.Predicate.equal(7))
+    print("set to equal 7")
+    add1(1, 2, 0.5)
+    add2(2, 3, 0.5)
+    add3(3, 4, 0.5)
+    Timer.set_predicate(Timer.Predicate.between(3, 8))
+    print("set to between 3, 8")
+    add1(1, 2, 0.5)
+    add2(2, 3, 0.5)
+    add3(3, 4, 0.5)
 
 
 if __name__ == '__main__':
