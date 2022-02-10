@@ -39,7 +39,7 @@ class RandomForest(Classifier):
 
         for _ in range(RandomForest.tree_count):
             # pass copies of the examples, so they properly hold their "predicted" value
-            examples_for_tree = {e.copy() for e in random.choices(examples, k=examples_per_tree)}
+            examples_for_tree = {Example.copy_of(e) for e in random.choices(examples, k=examples_per_tree)}
             attributes_for_tree = random.sample(attributes, k=attributes_per_tree)
 
             trained_tree = ID3(set(examples_for_tree), set(attributes_for_tree))
