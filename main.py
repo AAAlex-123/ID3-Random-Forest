@@ -1,4 +1,4 @@
-from load_imdb import load_examples, load_attributes
+from load_imdb import load_all_examples, load_all_attributes
 from id3 import ID3
 from random_forest import RandomForest
 from test_stats import TestStats
@@ -48,9 +48,9 @@ def test_classifier(classifier: Classifier, examples: set[Example]) -> TestStats
 # @timed2()
 def main_test(train_data_dir: str, test_data_dir: str, vocab_file_dir: str,
               example_size: int, attr_count: int, ignore_attr_count: int) -> TestResults:
-    train_data = load_examples(train_data_dir, example_size)
-    testing_data = load_examples(test_data_dir, example_size)
-    attributes = load_attributes(vocab_file_dir, attr_count, ignore_attr_count)
+    train_data = load_all_examples(train_data_dir, example_size)
+    testing_data = load_all_examples(test_data_dir, example_size)
+    attributes = load_all_attributes(vocab_file_dir, attr_count, ignore_attr_count)
 
     id3 = ID3.create_timed(train_data, attributes)
     rand_forest = RandomForest.create_timed(train_data, attributes)
