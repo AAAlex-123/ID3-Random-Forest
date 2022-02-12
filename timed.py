@@ -1,11 +1,11 @@
 import time
-from enum import Enum
+from enum import IntEnum
 
 
 class Timer:
     """ TODO """
 
-    class Priority(Enum(int)):
+    class Priority(IntEnum):
         """ TODO """
 
         LOW = 0
@@ -13,9 +13,9 @@ class Timer:
         HIGH = 7
         CRITICAL = 10
 
+        TEST = -1
         DEBUG = 0
-        TEST = 3
-        RUN = 7
+        RUN = 5
         PRODUCTION = 10
 
     class Predicate:
