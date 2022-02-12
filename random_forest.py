@@ -51,7 +51,7 @@ class RandomForest(Classifier):
         :param example: The example to be classified
         :return: The predicted category of the example
         """
-        category_count: dict[Category, int] = dict.fromkeys(Category.values(), 0)
+        category_count: dict[Category, int] = Category.counting_dict()
 
         for tree in self.trees:
             category_count[tree.classify(example)] += 1

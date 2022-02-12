@@ -11,7 +11,13 @@ class Category(Enum):
 
     @classmethod
     def values(cls) -> set['Category']:
+        """ TODO """
         return {cls.POS, cls.NEG}
+
+    @classmethod
+    def counting_dict(cls, value: int = 0) -> dict['Category', int]:
+        """ TODO """
+        return dict.fromkeys(cls.values(), value)
 
 
 class Example:
@@ -27,6 +33,8 @@ class Example:
     _ignored_chars_pattern = re.compile(_regex)
 
     def __init__(self, category: Category, raw_text: str):
+        """ TODO """
+
         self.actual: Category = category
         self.predicted: Category = Category.NONE
 
@@ -35,6 +43,7 @@ class Example:
 
     @classmethod
     def sanitize_attribute(cls, attribute: str) -> str:
+        """ TODO """
         return cls._ignored_chars_pattern.sub("", attribute, 0)
 
     @staticmethod
@@ -77,7 +86,7 @@ class Classifier:
         :return: a dictionary with the number of Examples classified with each Category
         """
 
-        category_count = dict.fromkeys(Category.values(), 0)
+        category_count = Category.counting_dict()
 
         for example in examples:
             category = self.classify(example)

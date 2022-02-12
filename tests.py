@@ -2,7 +2,7 @@ import os
 
 from timed import Timer
 from load_imdb import load_examples, load_attributes
-from id3 import entropy
+from id3_util import entropy
 
 
 @timed(prompt="Test Load")
