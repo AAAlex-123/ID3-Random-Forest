@@ -79,7 +79,7 @@ class Timer:
     _enabled: bool = True
     _predicate = Predicate.true()
 
-    def __init__(self, priority: int = int, prompt: str = ""):
+    def __init__(self, priority: int, prompt: str = ""):
         """ TODO """
         self._priority: int = priority
         self._prompt: str = prompt
