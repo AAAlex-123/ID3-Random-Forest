@@ -1,0 +1,10 @@
+{
+	"directory": "C:\\Users\\alexm\\projects\\C++\\AI-algorithms\\resources\\aclImdb",
+	"train": "train",
+	"test": "test",
+	"vocab": "imdb.vocab",
+
+	"example_count": 5000,
+	"ignored_attributes": 250,
+	"attribute_count": 500,
+}
