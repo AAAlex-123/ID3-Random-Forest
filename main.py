@@ -1,65 +1,78 @@
-from load_imdb import load_examples, load_attributes
-from id3 import ID3
-from random_forest import RandomForest
-from test_stats import TestStats
-from classifier import Classifier, Category, Example
-from timed import timed, timed2
-
 import os
 import sys
 
+from classifier_evaluation import ClassifierEvaluation
+from load_imdb import load_all_examples, load_all_attributes, filter_attributes_by_examples
+from classifier import Classifier, Example
+from id3 import ID3
+from random_forest import RandomForest
+from timed import Timer
 
-class TestResults:
-    def __init__(self, id3_train_results: TestStats, id3_test_results: TestStats, forest_train_results: TestStats,
-                 forest_test_results: TestStats):
-        self.id3_train_results = id3_train_results
-        self.id3_test_results = id3_test_results
-        self.forest_train_results = forest_train_results
-        self.forest_test_results = forest_test_results
+Priority = Timer.Priority
+CE = ClassifierEvaluation
 
 
-def test_classifier(classifier: Classifier, examples: set[Example]) -> TestStats:
+@Timer(priority=Priority.RUN)
+def load_data(dir_tr: str, dir_te: str, vocab_file: str, example_count: int, attr_count: int, ignored_attr_count: int):
+    """ TODO """
+
+    examples_tr = load_all_examples(dir_tr, example_count)
+    examples_te = load_all_examples(dir_te, example_count)
+    attributes = load_all_attributes(vocab_file, attr_count, ignored_attr_count)
+    attributes = filter_attributes_by_examples(attributes, examples_tr)
+
+    return examples_tr, examples_te, attributes
+
+
+@Timer(priority=Priority.RUN)
+def get_trained_classifiers(examples, attributes) -> tuple[ID3, RandomForest]:
+    """ TODO """
+
+    # no need to copy the examples since random forest makes a copy for each tree
+    id3 = ID3(examples, attributes)
+    random_forest = RandomForest(examples, attributes)
+
+    return id3, random_forest
+
+
+@Timer(priority=Priority.RUN)
+def get_stats_from_classifier(classifier: Classifier, examples: set[Example]) -> CE:
     """
-    Run a test on a given classifier for a given dataset.
-    :param classifier: any Classifier object
-    :param examples: the dataset to be tested
-    :return: a TestStats object describing the results of the testing
+    TODO
+
+    :param classifier: a trained Classifier
+    :param examples: the Examples that will be classified using the Classifier
+    :return: a ClassifierEvaluation object with the results of the classification
     """
-    false_positives = 0
-    false_negatives = 0
-    true_positives = 0
-    true_negatives = 0
 
     classifier.classify_bulk(examples)
 
-    for example in examples:
-        if example.actual == Category.POS and example.predicted == Category.POS:
-            true_positives += 1
-        elif example.actual == Category.NEG and example.predicted == Category.NEG:
-            true_negatives += 1
-        elif example.actual == Category.POS and example.predicted == Category.NEG:
-            false_negatives += 1
-        elif example.actual == Category.NEG and example.predicted == Category.POS:
-            false_positives += 1
-
-    return TestStats(true_negatives, true_positives, false_positives, false_negatives)
+    return CE(examples)
 
 
-# @timed2()
-def main_test(train_data_dir: str, test_data_dir: str, vocab_file_dir: str,
-              example_size: int, attr_count: int, ignore_attr_count: int) -> TestResults:
-    train_data = load_examples(train_data_dir, example_size)
-    testing_data = load_examples(test_data_dir, example_size)
-    attributes = load_attributes(vocab_file_dir, attr_count, ignore_attr_count)
+class Results:
+    """ TODO """
 
-    id3 = ID3.create_timed(train_data, attributes)
-    rand_forest = RandomForest.create_timed(train_data, attributes)
-
-    return TestResults(test_classifier(id3, train_data), test_classifier(id3, testing_data),
-                       test_classifier(rand_forest, train_data), test_classifier(rand_forest, testing_data))
+    def __init__(self, id3_tr: CE, id3_te: CE, fr_tr: CE, fr_te: CE):
+        self.id3_tr = id3_tr
+        self.id3_te = id3_te
+        self.rf = fr_tr
+        self.rf = fr_te
 
 
-@timed(prompt="Main program")
+@Timer(priority=Priority.RUN)
+def get_results_from_all_classifications(dir_tr: str, dir_te: str, vocab_file: str, example_count: int, attr_count: int, ignored_attr_count: int) -> Results:
+
+    data = load_data(dir_tr, dir_te, vocab_file, example_count, attr_count, ignored_attr_count)
+    examples_tr, examples_te, attributes = data
+
+    id3, rand_forest = get_trained_classifiers(examples_tr, attributes)
+
+    return Results(get_stats_from_classifier(id3, examples_tr), get_stats_from_classifier(id3, examples_te),
+                   get_stats_from_classifier(rand_forest, examples_tr), get_stats_from_classifier(rand_forest, examples_te))
+
+
+@Timer(priority=Priority.PRODUCTION, prompt="Main program")
 def main() -> None:
     def check_int_arg(arg: str, param_name: str, bottom_limit: int, upper_limit: int) -> int:
         try:
@@ -94,11 +107,11 @@ def main() -> None:
             if answer.lower() != "y":
                 sys.exit(0)
 
-        results = main_test(train_data_dir, test_data_dir, vocab_file_name, example_size, attr_count, ignore_attr_count)
-        print("ID3 training results: ", results.id3_train_results)
-        print("ID3 testing results: ", results.id3_test_results)
-        print("Random Forest training results: ", results.forest_train_results)
-        print("Random Forest testing results: ", results.forest_test_results)
+        results = get_results_from_all_classifications(train_data_dir, test_data_dir, vocab_file_name, example_size, attr_count, ignore_attr_count)
+        print("ID3 training results: ", results.id3_tr.basic_stats())
+        print("ID3 testing results: ", results.id3_te.basic_stats())
+        print("Random Forest training results: ", results.rf.basic_stats())
+        print("Random Forest testing results: ", results.rf.basic_stats())
 
 
 if __name__ == "__main__":

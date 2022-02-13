@@ -1,3 +1,6 @@
 
 # PyCharm
 .idea/
+
+# python build
+__pycache__/

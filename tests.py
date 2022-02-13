@@ -1,11 +1,15 @@
 import os
 
-from timed import timed
-from load_imdb import load_examples, load_attributes
-from id3 import entropy
+from classifier import Category, Example
+from classifier_evaluation import ClassifierEvaluation
+from timed import Timer
+from load_imdb import load_all_examples, load_all_attributes
+from id3_util import entropy
+
+TEST = Timer.Priority.TEST
 
 
-@timed(prompt="Test Load")
+@Timer(priority=-1, prompt="Test Load")
 def test_load(sample_size: int, count: int, ignore: int) -> None:
 
     # path_to_file = os.path.dirname(os.path.abspath(__file__))
@@ -14,8 +18,8 @@ def test_load(sample_size: int, count: int, ignore: int) -> None:
     attribute_dir = os.path.join(path_to_imdb, "imdb.vocab")
 
     try:
-        examples = load_examples(example_dir, sample_size)
-        attributes = load_attributes(attribute_dir, count, ignore)
+        examples = load_all_examples(example_dir, sample_size)
+        attributes = load_all_attributes(attribute_dir, count, ignore)
 
     except os.error as err:
         print(f"Loading didn't complete normally due to: {err}")
@@ -44,6 +48,27 @@ def test_entropy(*probabilities: float) -> list[float]:
 
     return entropies
 
+
+@Timer(priority=TEST)
+def test_classifier_evaluation() -> ClassifierEvaluation:
+    p = Category.POS
+    n = Category.NEG
+    act = [p, p, p, p, p, n, n, n, n, n]
+    pre = [p, p, p, p, n, p, p, p, n, n]
+    examples = [Example(Category.NONE, "") for _ in range(10)]
+    for ac, pr, ex in zip(act, pre, examples):
+        ex.actual = ac
+        ex.predicted = pr
+
+    ce = ClassifierEvaluation(set(examples))
+    assert ce.accuracy() == 0.6
+    assert ce.precision(p) == 0.5714285714285714
+    assert ce.recall(p) == 0.8
+    assert ce.f_measure(p, 1) == 0.6666666666666666
+
+    return ce
+
+
 def find_best_cutoff():
     max_accuracy = -1
     max_cutoff = -1
@@ -53,11 +78,11 @@ def find_best_cutoff():
     count_attrs = 200
     data_dir = sys.argv[1]
 
-    example_list: list[Example] = list(load_examples(os.path.join(data_dir, "train"), examples))
+    example_list: list[Example] = list(load_all_examples(os.path.join(data_dir, "train"), examples))
     test_examples: set[Example] = set(example_list[:len(example_list)//2])
     train_examples: set[Example] = set(example_list[len(example_list)//2:])
 
-    attributes: set[str] = load_attributes(os.path.join(sys.argv[1], "imdb.vocab"), count_attrs, ignored_attrs)
+    attributes: set[str] = load_all_attributes(os.path.join(sys.argv[1], "imdb.vocab"), count_attrs, ignored_attrs)
 
     for i in range(70, 100, 1):
         ID3.cutoff = i/100
@@ -80,11 +105,11 @@ def find_best_tree_count():
     count_attrs = 200
     data_dir = sys.argv[1]
 
-    example_list: list[Example] = list(load_examples(os.path.join(data_dir, "train"), examples))
+    example_list: list[Example] = list(load_all_examples(os.path.join(data_dir, "train"), examples))
     test_examples: set[Example] = set(example_list[:len(example_list)//2])
     train_examples: set[Example] = set(example_list[len(example_list)//2:])
 
-    attributes: set[str] = load_attributes(os.path.join(sys.argv[1], "imdb.vocab"), count_attrs, ignored_attrs)
+    attributes: set[str] = load_all_attributes(os.path.join(sys.argv[1], "imdb.vocab"), count_attrs, ignored_attrs)
 
     for i in range(70, 201, 5):
         RandomForest.tree_count = i
@@ -100,5 +125,41 @@ def find_best_tree_count():
     return max_cutoff, max_accuracy
 
 
+def test_timer():
+    import time
+
+    @Timer(priority=Timer.Priority.LOW)
+    def add1(a: int, b: int, n: float) -> int:
+        time.sleep(n)
+        return a * b
+
+    @Timer(priority=Timer.Priority.MEDIUM, prompt="my prompt")
+    def add2(a: int, b: int, n: float) -> int:
+        time.sleep(n)
+        return a * b
+
+    @Timer(priority=Timer.Priority.HIGH, prompt=None)
+    def add3(a: int, b: int, n: float) -> int:
+        time.sleep(n)
+        return a * b
+
+    Timer.set_predicate(Timer.Predicate.above(6))
+    print("set to above 6")
+    add1(1, 2, 0.5)
+    add2(2, 3, 0.5)
+    add3(3, 4, 0.5)
+    Timer.set_predicate(Timer.Predicate.equal(7))
+    print("set to equal 7")
+    add1(1, 2, 0.5)
+    add2(2, 3, 0.5)
+    add3(3, 4, 0.5)
+    Timer.set_predicate(Timer.Predicate.between(3, 8))
+    print("set to between 3, 8")
+    add1(1, 2, 0.5)
+    add2(2, 3, 0.5)
+    add3(3, 4, 0.5)
+
+
 if __name__ == '__main__':
-    print(find_best_tree_count())
+    Timer.set_predicate(Timer.Predicate.equal(TEST))
+    test_classifier_evaluation()

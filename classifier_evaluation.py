@@ -2,43 +2,73 @@ from classifier import Example, Category
 
 
 class ClassifierEvaluation:
-    def __init__(self, classified_examples: set[Example], b: float = 1):
+    """ TODO """
 
-        example_count = len(classified_examples)
-        true_positives = true_negatives = false_negatives = false_positives = 0
+    def __init__(self, classified_examples: set[Example]):
 
-        for example in classified_examples:
-            if example.actual == Category.POS and example.predicted == Category.POS:
-                true_positives += 1
-            elif example.actual == Category.NEG and example.predicted == Category.NEG:
-                true_negatives += 1
-            elif example.actual == Category.POS and example.predicted == Category.NEG:
-                false_negatives += 1
-            elif example.actual == Category.NEG and example.predicted == Category.POS:
-                false_positives += 1
+        self._example_count = len(classified_examples)
+        self._data = {}
+        for category in Category.values():
+            self._data[category] = dict.fromkeys({True, False}, 0)
 
-        self.accuracy_true: float = (true_positives + true_negatives) / example_count
+        for category in Category.values():
+            for example in classified_examples:
+                if example.predicted == category:
+                    self._data[category][example.actual == category] += 1
 
-        self.precision_pos: float = true_positives / (true_positives + false_positives)
-        self.precision_neg: float = true_negatives / (true_negatives + false_negatives)
+    def accuracy(self) -> float:
+        if self._example_count == 0:
+            return 0
 
-        self.recall_pos: float = true_positives / (true_positives + false_negatives)
-        self.recall_neg: float = true_negatives / (true_negatives + false_positives)
+        return sum(self._data[c][True] for c in Category.values()) / self._example_count
 
-        self.f_measure_pos: float = ((b * b + 1) * self.precision_pos * self.recall_pos) / (b * b * self.precision_pos + self.recall_pos)
-        self.f_measure_neg: float = ((b * b + 1) * self.precision_neg * self.recall_neg) / (b * b * self.precision_neg + self.recall_neg)
+    def precision(self, category: Category) -> float:
+        predicted_of_category = self._data[category][True]
+        total_classified_of_category = self._data[category][True] + self._data[category][False]
 
-        self.macro_precision = 1 / 2 * (self.precision_pos + self.precision_neg)
-        self.macro_recall = 1 / 2 * (self.recall_pos + self.recall_neg)
+        if total_classified_of_category == 0:
+            return 1
 
-        self.micro_precision = None
-        self.micro_recall = None
+        return predicted_of_category / total_classified_of_category
 
-        self.sensitivity = self.recall_pos
-        self.specificity = self.recall_neg
-        self.true_positive_rate = self.sensitivity
-        self.false_positive_rate = 1 - self.specificity
+    def recall(self, category: Category) -> float:
+        predicted_of_category = self._data[category][True]
+        true_members_of_category = self._data[category][True] + sum(self._data[c][False] for c in Category.values() if c != category)
 
-    def __str__(self):
-        return f"Accuracy: {self.accuracy_true}\nPrecision: {self.precision_pos}\n" \
-               f"Recall: {self.recall_pos}\nF Measure (b=0.5): {self.f_measure_pos}\n"
+        if true_members_of_category == 0:
+            return 0
+
+        return predicted_of_category / true_members_of_category
+
+    def f_measure(self, category: Category, b: float) -> float:
+        precision = self.precision(category)
+        recall = self.recall(category)
+
+        if precision == 0 and recall == 0:
+            return 0
+
+        if b == 0 and recall == 0:
+            return 0
+
+        return ((b * b + 1) * precision * recall) / (b * b * precision + recall)
+
+    def macro_precision(self) -> float:
+        return sum(self.precision(c) for c in Category.values()) / len(self._data)
+
+    def macro_recall(self) -> float:
+        return sum(self.recall(c) for c in Category.values()) / len(self._data)
+
+    def micro_precision(self) -> float:
+        enumerator = sum(self._data[c][True] for c in Category.values())
+        denominator = sum(self._data[c][True] + self._data[c][False] for c in Category.values())
+        return enumerator / denominator
+
+    def micro_recall(self) -> float:
+        enumerator = sum(self._data[c][True] for c in Category.values())
+        denominator = sum(self._data[c][True] + sum(self._data[c1][False] for c1 in Category.values() if c1 != c)
+                          for c in Category.values())
+        return enumerator / denominator
+
+    def basic_stats(self) -> str:
+        return f"Accuracy: {self.accuracy()}\nPrecision: {self.precision(Category.POS)}\n" \
+               f"Recall: {self.recall(Category.POS)}\nF Measure (b=1): {self.f_measure(Category.POS, b=1)}\n"
