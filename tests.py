@@ -4,7 +4,7 @@ from classifier import Category, Example
 from classifier_evaluation import ClassifierEvaluation
 from timed import Timer
 from load_imdb import load_all_examples, load_all_attributes
-from id3_util import entropy
+from id3_util import _entropy
 
 TEST = Timer.Priority.TEST
 
@@ -38,13 +38,13 @@ def test_entropy(*probabilities: float) -> list[float]:
     :param probabilities: the probabilities to calculate the entropy for
     :return: a list that has the entropy of probability i at index i
     """
-    entropies = [entropy(p) for p in probabilities]
+    entropies = [_entropy(p) for p in probabilities]
     for probability, probability_entropy in zip(probabilities, entropies):
         print("H(%0.2f) = %0.5f" % (probability, probability_entropy))
 
-    assert entropy(1) == 0
-    assert entropy(0) == 0
-    assert entropy(1/2) == 1
+    assert _entropy(1) == 0
+    assert _entropy(0) == 0
+    assert _entropy(1 / 2) == 1
 
     return entropies
 
