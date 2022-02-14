@@ -2,7 +2,7 @@ import sys
 
 from classifier_evaluation import ClassifierEvaluation
 from config import Config
-from load_imdb import load_all_examples, load_all_attributes,\
+from load_imdb import load_examples_from_directory, load_attributes_from_file,\
     filter_attributes_by_examples
 from classifier import Classifier, Example
 from id3 import ID3
@@ -17,12 +17,12 @@ CE = ClassifierEvaluation
 def load_data(config: Config):
     """ TODO """
 
-    examples_tr = load_all_examples(config["train"], config["example_count"])
-    examples_te = load_all_examples(config["test"], config["example_count"])
+    examples_tr = load_examples_from_directory(config["train"], config["example_count"])
+    examples_te = load_examples_from_directory(config["test"], config["example_count"])
 
-    attributes = load_all_attributes(config["vocab"],
-                                     config["attribute count"],
-                                     config["ignored_attributes"])
+    attributes = load_attributes_from_file(config["vocab"],
+                                           config["attribute count"],
+                                           config["ignored_attributes"])
     attributes = filter_attributes_by_examples(attributes, examples_tr)
 
     return examples_tr, examples_te, attributes

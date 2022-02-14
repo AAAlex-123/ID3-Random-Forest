@@ -3,7 +3,7 @@ import os
 from classifier import Category, Example
 from classifier_evaluation import ClassifierEvaluation
 from timed import Timer
-from load_imdb import load_all_examples, load_all_attributes
+from load_imdb import load_examples_from_directory, load_attributes_from_file
 from id3_util import _entropy
 
 TEST = Timer.Priority.TEST
@@ -18,8 +18,8 @@ def test_load(sample_size: int, count: int, ignore: int) -> None:
     attribute_dir = os.path.join(path_to_imdb, "imdb.vocab")
 
     try:
-        examples = load_all_examples(example_dir, sample_size)
-        attributes = load_all_attributes(attribute_dir, count, ignore)
+        examples = load_examples_from_directory(example_dir, sample_size)
+        attributes = load_attributes_from_file(attribute_dir, count, ignore)
 
     except os.error as err:
         print(f"Loading didn't complete normally due to: {err}")
@@ -78,11 +78,11 @@ def find_best_cutoff():
     count_attrs = 200
     data_dir = sys.argv[1]
 
-    example_list: list[Example] = list(load_all_examples(os.path.join(data_dir, "train"), examples))
+    example_list: list[Example] = list(load_examples_from_directory(os.path.join(data_dir, "train"), examples))
     test_examples: set[Example] = set(example_list[:len(example_list)//2])
     train_examples: set[Example] = set(example_list[len(example_list)//2:])
 
-    attributes: set[str] = load_all_attributes(os.path.join(sys.argv[1], "imdb.vocab"), count_attrs, ignored_attrs)
+    attributes: set[str] = load_attributes_from_file(os.path.join(sys.argv[1], "imdb.vocab"), count_attrs, ignored_attrs)
 
     for i in range(70, 100, 1):
         ID3.cutoff = i/100
@@ -105,11 +105,11 @@ def find_best_tree_count():
     count_attrs = 200
     data_dir = sys.argv[1]
 
-    example_list: list[Example] = list(load_all_examples(os.path.join(data_dir, "train"), examples))
+    example_list: list[Example] = list(load_examples_from_directory(os.path.join(data_dir, "train"), examples))
     test_examples: set[Example] = set(example_list[:len(example_list)//2])
     train_examples: set[Example] = set(example_list[len(example_list)//2:])
 
-    attributes: set[str] = load_all_attributes(os.path.join(sys.argv[1], "imdb.vocab"), count_attrs, ignored_attrs)
+    attributes: set[str] = load_attributes_from_file(os.path.join(sys.argv[1], "imdb.vocab"), count_attrs, ignored_attrs)
 
     for i in range(70, 201, 5):
         RandomForest.tree_count = i
