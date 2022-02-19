@@ -1,24 +1,19 @@
-
-class io:
-    def __init__(self, filename: str, mode: str):
-        self.filename = filename
-        self.mode = mode
-        self._file_handle = None
-
-    def __enter__(self):
-        self.file_handle = open(self.filename, mode=self.mode, encoding="utf-8")
-        return self.file_handle
-
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        self.file_handle.close()
+""" Defines functions that remove most boilerplate related to file streams """
 
 
-class reader(io):
-    def __init__(self, filename: str):
-        super().__init__(filename, 'r')
+def reader(filename: str):
+    """ Returns an open stream for reading
+
+    :param filename: the name of the file
+    :return: the open stream in 'r' mode
+    """
+    return open(filename, mode='r', encoding="utf-8")
 
 
-class writer(io):
-    def __init__(self, filename: str):
-        super().__init__(filename, 'w')
+def writer(filename: str):
+    """ Returns an open stream for writing
 
+    :param filename: the name of the file
+    :return: the open stream in 'w' mode
+    """
+    return open(filename, mode='w', encoding="utf-8")
